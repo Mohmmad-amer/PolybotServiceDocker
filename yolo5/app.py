@@ -6,6 +6,8 @@ import uuid
 import yaml
 from loguru import logger
 import os
+import boto3
+from pymongo import MongoClient
 
 images_bucket = os.environ['BUCKET_NAME']
 
@@ -24,9 +26,18 @@ def predict():
     # Receives a URL parameter representing the image to download from S3
     img_name = request.args.get('imgName')
 
+    try:
+        original_img_path = "street.png"
+        # Creating an S3 access object
+        s3 = boto3.client('s3')
+        s3.download_file(images_bucket,'street.png', original_img_path)
+        logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
+    except Exception as e:
+        logger.error(f"Error downloading image from S3: {e}")
+        return f"Error downloading image from S3: {e}", 500
+
     # TODO download img_name from S3, store the local image path in the original_img_path variable.
     #  The bucket name is provided as an env var BUCKET_NAME.
-    original_img_path = ...
 
     logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
 
@@ -39,17 +50,18 @@ def predict():
         name=prediction_id,
         save_txt=True
     )
-
     logger.info(f'prediction: {prediction_id}/{original_img_path}. done')
-
     # This is the path for the predicted image with labels
     # The predicted image typically includes bounding boxes drawn around the detected objects, along with class labels and possibly confidence scores.
     predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path}')
-
     # TODO Uploads the predicted image (predicted_img_path) to S3 (be careful not to override the original image).
+
+    s3.upload_file(original_img_path, images_bucket, str(predicted_img_path))
 
     # Parse prediction labels and create a summary
     pred_summary_path = Path(f'static/data/{prediction_id}/labels/{original_img_path.split(".")[0]}.txt')
+
+    logger.info(f"iamge nameghdfg{img_name}")
     if pred_summary_path.exists():
         with open(pred_summary_path) as f:
             labels = f.read().splitlines()
@@ -65,16 +77,27 @@ def predict():
         logger.info(f'prediction: {prediction_id}/{original_img_path}. prediction summary:\n\n{labels}')
 
         prediction_summary = {
-            'prediction_id': prediction_id,
+            'prediction_id': str(prediction_id),
             'original_img_path': original_img_path,
-            'predicted_img_path': predicted_img_path,
+            'predicted_img_path': str(predicted_img_path),
             'labels': labels,
             'time': time.time()
         }
+        logger.info(prediction_summary)
+        client = MongoClient('mongodb://mongo1:27017/')
+        db = client['Mohmmad_database']  # Replace 'your_database_name' with the name of your MongoDB database
+        collection = db['Mohmmad_collection']  # Replace 'your_collection_name' with the name of your MongoDB collection
+
+        try:
+            collection.insert_one(prediction_summary)
+            logger.info(f'prediction: {prediction_id}. Prediction summary stored in MongoDB')
+        except Exception as e:
+            logger.error(f"Error storing prediction summary in MongoDB: {e}")
+            return f"Error storing prediction summary in MongoDB: {e}", 500
 
         # TODO store the prediction_summary in MongoDB
 
-        return prediction_summary
+        return str(prediction_summary)
     else:
         return f'prediction: {prediction_id}/{original_img_path}. prediction result not found', 404
 
