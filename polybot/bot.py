@@ -79,71 +79,53 @@ class ObjectDetectionBot(Bot):
 
         images_bucket = os.environ['BUCKET_NAME']
         s3 = boto3.client('s3')
-#        img_name = request.args.get('imgName')
 
         if self.is_current_msg_photo(msg):
             photo_path = self.download_user_photo(msg)
             img_name=os.path.basename(photo_path)
-            # TODO upload the photo to S3
+
             try:
                 s3.upload_file(photo_path, images_bucket, img_name)
             except Exception as e:
                 logger.error(e)
 
 
-            # TODO send an HTTP request to the `yolo5` service for prediction
+            #  send an HTTP request to the `yolo5` service for prediction
             # Define the URL and parameters
             try:
                 url = 'http://localhost:8081/predict'
                 params = {'imgName': img_name}
-
                 # Send the POST request
                 response = requests.post(url, params=params)
 
                 if response.status_code == 200:
-# Find the index of the labels key
+                    # Find the index of the labels key
                     labels_index = response.text.find("'labels'")
 
-# Extract the substring starting from the labels key
+                    # Extract the substring starting from the labels key
                     labels_substr = response.text[labels_index:]
 
-# Find the index of the opening bracket of the labels array
+                    # Find the index of the opening bracket of the labels array
                     open_bracket_index = labels_substr.find("[")
 
-# Extract the substring starting from the opening bracket
+                    # Extract the substring starting from the opening bracket
                     labels_array_substr = labels_substr[open_bracket_index:]
 
-# Find the index of the closing bracket of the labels array
+                    # Find the index of the closing bracket of the labels array
                     close_bracket_index = labels_array_substr.find("]")
 
-# Extract the substring containing only the labels array
+                    # Extract the substring containing only the labels array
                     labels_array_substr = labels_array_substr[:close_bracket_index + 1]
 
-# Convert the labels array substring to a list of dictionaries
+                    # Convert the labels array substring to a list of dictionaries
                     labels_list = ast.literal_eval(labels_array_substr)
 
-# Extract the class names from the list of labels
+                    # Extract the class names from the list of labels
                     classes = [label['class'] for label in labels_list]
-                 # Extract JSON data from the response
-                    #labels_index = response.text.find('labels')
-                    #label=response.text[labels_index]
-                    self.send_text(msg['chat']['id'], f'Detected objects\n {classes}')
-            #    response= self.extract_class(response)
-            # TODO send the returned results to the Telegram end-user
+
+                    self.send_text(msg['chat']['id'], f'Detected objects:\n {classes}')
+
                 else:
-                    self.send_text(msg['chat']['id'], f'Detected objects\n {response}')
+                    self.send_text(msg['chat']['id'],  f'{response}')
             except Exception as e:
                 logger.error(f'http request has failed {e}')
-
-    def extract_class(self, response):
-
-        response_data = json.loads(response)
-
-        class_counts = {}
-        for label in response_data['labels']:
-            class_name = label['class']
-            class_counts[class_name] = class_counts.get(class_name, 0) + 1
-
-        class_counts_string = '\n'.join([f"{class_name}: {count}" for class_name, count in class_counts.items()])
-
-        return class_counts_string

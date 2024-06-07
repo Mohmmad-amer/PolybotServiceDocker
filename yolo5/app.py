@@ -36,9 +36,6 @@ def predict():
         logger.error(f"Error downloading image from S3: {e}")
         return f"Error downloading image from S3: {e}", 500
 
-    # TODO download img_name from S3, store the local image path in the original_img_path variable.
-    #  The bucket name is provided as an env var BUCKET_NAME.
-
     logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
 
     # Predicts the objects in the image
@@ -54,14 +51,12 @@ def predict():
     # This is the path for the predicted image with labels
     # The predicted image typically includes bounding boxes drawn around the detected objects, along with class labels and possibly confidence scores.
     predicted_img_path = Path(f'static/data/{prediction_id}/{original_img_path}')
-    # TODO Uploads the predicted image (predicted_img_path) to S3 (be careful not to override the original image).
 
     s3.upload_file(original_img_path, images_bucket, str(predicted_img_path))
 
     # Parse prediction labels and create a summary
     pred_summary_path = Path(f'static/data/{prediction_id}/labels/{original_img_path.split(".")[0]}.txt')
 
-    logger.info(f"iamge nameghdfg{img_name}")
     if pred_summary_path.exists():
 
         with open(pred_summary_path) as f:
@@ -96,11 +91,9 @@ def predict():
             logger.error(f"Error storing prediction summary in MongoDB: {e}")
             return f"Error storing prediction summary in MongoDB: {e}", 500
 
-        # TODO store the prediction_summary in MongoDB
 
         return str(prediction_summary)
     else:
-        logger.info(f"iamge no enter if {img_name}")
         return f'prediction: {prediction_id}/{original_img_path}. prediction result not found', 404
 
 
