@@ -27,10 +27,10 @@ def predict():
     img_name = request.args.get('imgName')
 
     try:
-        original_img_path = "street.png"
+        original_img_path = img_name
         # Creating an S3 access object
         s3 = boto3.client('s3')
-        s3.download_file(images_bucket,'street.png', original_img_path)
+        s3.download_file(images_bucket,img_name, original_img_path)
         logger.info(f'prediction: {prediction_id}/{original_img_path}. Download img completed')
     except Exception as e:
         logger.error(f"Error downloading image from S3: {e}")
@@ -63,6 +63,7 @@ def predict():
 
     logger.info(f"iamge nameghdfg{img_name}")
     if pred_summary_path.exists():
+
         with open(pred_summary_path) as f:
             labels = f.read().splitlines()
             labels = [line.split(' ') for line in labels]
@@ -99,6 +100,7 @@ def predict():
 
         return str(prediction_summary)
     else:
+        logger.info(f"iamge no enter if {img_name}")
         return f'prediction: {prediction_id}/{original_img_path}. prediction result not found', 404
 
 
