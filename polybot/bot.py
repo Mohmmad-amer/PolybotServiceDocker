@@ -5,8 +5,8 @@ import time
 from telebot.types import InputFile
 import boto3
 import requests
-import json
 import ast
+from collections import Counter
 
 
 class Bot:
@@ -122,10 +122,18 @@ class ObjectDetectionBot(Bot):
 
                     # Extract the class names from the list of labels
                     classes = [label['class'] for label in labels_list]
+                    result_dict = self.count_items(classes)
+                    result=""
+                    for item, count in result_dict.items():
+                        result=f"{result}\n{item} = {count}"
 
-                    self.send_text(msg['chat']['id'], f'Detected objects:\n {classes}')
+                    self.send_text(msg['chat']['id'], f'Detected objects:\n {result}')
 
                 else:
                     self.send_text(msg['chat']['id'],  f'{response}')
             except Exception as e:
                 logger.error(f'http request has failed {e}')
+
+    def count_items(lst):
+        counts = Counter(lst)
+        return dict(counts)
