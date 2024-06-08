@@ -93,7 +93,7 @@ class ObjectDetectionBot(Bot):
             #  send an HTTP request to the `yolo5` service for prediction
             # Define the URL and parameters
             try:
-                url = 'http://yolo5:8081/predict'
+                url = 'http://image-detect.mohmmad.click:8081/predict'
                 params = {'imgName': img_name}
                 # Send the POST request
                 response = requests.post(url, params=params)
@@ -134,6 +134,6 @@ class ObjectDetectionBot(Bot):
             except Exception as e:
                 logger.error(f'http request has failed {e}')
 
-    def count_items(lst):
+    def count_items(self,lst):
         counts = Counter(lst)
         return dict(counts)

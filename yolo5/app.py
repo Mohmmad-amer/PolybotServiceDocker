@@ -89,7 +89,7 @@ def predict():
             logger.info(f'prediction: {prediction_id}. Prediction summary stored in MongoDB')
         except Exception as e:
             logger.error(f"Error storing prediction summary in MongoDB: {e}")
-            return f"Error storing prediction summary in MongoDB: {e}", 500
+            #return f"Error storing prediction summary in MongoDB: {e}", 500
 
 
         return str(prediction_summary)
