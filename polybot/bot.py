@@ -93,7 +93,7 @@ class ObjectDetectionBot(Bot):
             #  send an HTTP request to the `yolo5` service for prediction
             # Define the URL and parameters
             try:
-                url = 'http://localhost:8081/predict'
+                url = 'http://yolo5:8081/predict'
                 params = {'imgName': img_name}
                 # Send the POST request
                 response = requests.post(url, params=params)
