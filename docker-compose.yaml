@@ -45,7 +45,6 @@ services:
     networks:
       - mongoCluster
 
-
   app:
     image: ${POLYBOT_IMG_NAME}
     environment:
