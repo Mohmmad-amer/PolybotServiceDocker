@@ -81,7 +81,10 @@ jobs:
             echo """
             POLYBOT_IMG_NAME=${{ secrets.DOCKERHUB_USERNAME }}/polybot:${{ github.run_number }}
             YOLO5_IMG_NAME=${{ secrets.DOCKERHUB_USERNAME }}/yolo5:${{ github.run_number }}
-            TELEGRAM_APP_URL=$BOT_INSTANCE_DOMAIN
+            TELEGRAM_APP_URL=${{ env.BOT_INSTANCE_DOMAIN }}:8443
+            TELEGRAM_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            BUCKET_NAME=${{ secrets.BUCKET_NAME }}
+          
             """ > .env
             
             # Take the service down
@@ -89,14 +92,5 @@ jobs:
             
             # Take it up with the current updated values
             docker compose up -d
-            sleep 15
-            docker exec -it mongo1 mongo --eval "rs.initiate({
-                     _id: 'myReplicaSet',
-                     members: [
-                       {_id: 0, host: 'mongo1'},
-                       {_id: 1, host: 'mongo2'},
-                       {_id: 2, host: 'mongo3'}
-                     ]
-                    })"
 
             
