@@ -7,6 +7,7 @@ import boto3
 import requests
 import ast
 from collections import Counter
+import json
 
 
 class Bot:
@@ -92,45 +93,25 @@ class ObjectDetectionBot(Bot):
 
             #  send an HTTP request to the `yolo5` service for prediction
             # Define the URL and parameters
+
             try:
-                url = 'http://image-detect.mohmmad.click:8081/predict'
-                params = {'imgName': img_name}
-                # Send the POST request
-                response = requests.post(url, params=params)
-
-                if response.status_code == 200:
-                    # Find the index of the labels key
-                    labels_index = response.text.find("'labels'")
-
-                    # Extract the substring starting from the labels key
-                    labels_substr = response.text[labels_index:]
-
-                    # Find the index of the opening bracket of the labels array
-                    open_bracket_index = labels_substr.find("[")
-
-                    # Extract the substring starting from the opening bracket
-                    labels_array_substr = labels_substr[open_bracket_index:]
-
-                    # Find the index of the closing bracket of the labels array
-                    close_bracket_index = labels_array_substr.find("]")
-
-                    # Extract the substring containing only the labels array
-                    labels_array_substr = labels_array_substr[:close_bracket_index + 1]
-
-                    # Convert the labels array substring to a list of dictionaries
-                    labels_list = ast.literal_eval(labels_array_substr)
-
-                    # Extract the class names from the list of labels
-                    classes = [label['class'] for label in labels_list]
-                    result_dict = self.count_items(classes)
-                    result=""
-                    for item, count in result_dict.items():
-                        result=f"{result}\n{item} = {count}"
-
-                    self.send_text(msg['chat']['id'], f'Detected objects:\n {result}')
-
-                else:
-                    self.send_text(msg['chat']['id'],  f'{response}')
+                logger.info('Sending message to SQS')
+                sqs = boto3.client('sqs', region_name='eu-north-1')
+                queue_url = 'https://sqs.eu-north-1.amazonaws.com/700935310038/mohmmad-sqs'
+                message = {
+                    'imgName': os.path.basename(photo_path),
+                    'chat_id': msg['chat']['id']
+                }
+                sqs.send_message(
+                    QueueUrl=queue_url,
+                    MessageBody=json.dumps(message)
+                )
+                logger.info('message sent to SQS')
+            except Exception as e:
+                logger.error(f'Error sending message to SQS: {e}')
+                self.send_text(msg['chat']['id'],
+                               f'Error sending message to SQS: {e}')
+                return
             except Exception as e:
                 logger.error(f'http request has failed {e}')
 
